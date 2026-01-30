@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>LaunchPad | Launch Your Careers</title>
+
+<style>
+:root {
+  --primary:#22C55E;
+  --bg:#F0FDF4;
+  --card:#ffffff;
+}
+body {
+  font-family: Arial;
+  background: var(--bg);
+  text-align: center;
+}
+.card {
+  background: var(--card);
+  padding: 20px;
+  width: 320px;
+  margin: 20px auto;
+  border-radius: 16px;
+}
+.hidden { display:none; }
+</style>
+</head>
+
+<body>
+
+<div id="login">
+  <h1>LaunchPad</h1>
+  <p>Launch Your Careers</p>
+  <div class="card">
+    <input id="email" placeholder="Email"><br><br>
+    <input id="password" type="password" placeholder="Password"><br><br>
+    <select id="role">
+      <option value="dev">Developer</option>
+      <option value="recruiter">Recruiter</option>
+      <option value="admin">Admin</option>
+    </select><br><br>
+    <button onclick="login()">Login</button>
+  </div>
+</div>
+
+<div id="dev" class="hidden">
+  <h2>Developer Dashboard</h2>
+  <div class="card">
+    <input id="title" placeholder="Project title">
+    <input id="tech" placeholder="Tech stack">
+    <button onclick="add()">Add</button>
+  </div>
+  <ul id="projects"></ul>
+</div>
+
+<div id="recruiter" class="hidden">
+  <h2>Recruiter Dashboard</h2>
+  <div class="card">Candidate View</div>
+</div>
+
+<div id="admin" class="hidden">
+  <h2>Admin Dashboard</h2>
+  <ul id="users"></ul>
+</div>
+
+<script>
+const API="http://localhost:5000/api";
+let token="";
+
+function login(){
+ fetch(API+"/auth/login",{
+  method:"POST",
+  headers:{"Content-Type":"application/json"},
+  body:JSON.stringify({
+   email:email.value,
+   password:password.value,
+   role:role.value
+  })
+ }).then(r=>r.json()).then(d=>{
+  token=d.token;
+  login.style.display="none";
+  if(d.role=="dev"){dev.classList.remove("hidden");load();}
+  if(d.role=="recruiter"){recruiter.classList.remove("hidden");}
+  if(d.role=="admin"){admin.classList.remove("hidden");loadUsers();}
+ });
+}
+
+function load(){
+ fetch(API+"/projects",{headers:{Authorization:token}})
+ .then(r=>r.json())
+ .then(d=>{
+  projects.innerHTML=d.map(p=>`<li>${p.title}</li>`).join("");
+ });
+}
+
+function add(){
+ fetch(API+"/projects",{
+  method:"POST",
+  headers:{
+   "Content-Type":"application/json",
+   Authorization:token
+  },
+  body:JSON.stringify({title:title.value,tech:tech.value})
+ }).then(load);
+}
+
+function loadUsers(){
+ fetch(API+"/admin/users",{headers:{Authorization:token}})
+ .then(r=>r.json())
+ .then(d=>{
+  users.innerHTML=d.map(u=>`<li>${u.email} (${u.role})</li>`).join("");
+ });
+}
+</script>
+
+</body>
+</html>
